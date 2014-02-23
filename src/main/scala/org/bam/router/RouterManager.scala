@@ -16,12 +16,12 @@ class RouterManager extends Actor {
   override def receive: Actor.Receive = PartialFunction.empty
 }
 
-class RouterTCPTransport extends Actor with ActorLogging {
+class RouterTCPTransport extends Actor with ActorLogging with ActorSettings {
   override def preStart() {
     import context._
 
     super.preStart()
-    IO(Tcp) ! Tcp.Bind(context.self, new InetSocketAddress(6767))
+    IO(Tcp) ! Tcp.Bind(context.self, new InetSocketAddress(settings.api.tcp.port))
   }
 
   override def receive: Actor.Receive = {
