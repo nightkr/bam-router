@@ -34,7 +34,7 @@ class RouterTCPTransport extends Actor with ActorLogging {
         new BackpressureBuffer(lowBytes = 100, highBytes = 1000, maxBytes = 10000)
       )
       val connection = context.sender
-      val handler = context.actorOf(Props[RouterTCPClientHandler])
+      val handler = context.actorOf(Props(new RouterTCPClientHandler(init)))
       val pipeline = context.actorOf(TcpPipelineHandler.props(init, connection, handler))
       connection ! Tcp.Register(pipeline)
   }
