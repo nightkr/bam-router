@@ -1,10 +1,12 @@
 package org.bam.router
 
-import akka.actor.{ActorLogging, Props, Actor}
+import akka.actor._
 import akka.io._
 import java.net.InetSocketAddress
 import akka.util.ByteString
 import akka.io.TcpPipelineHandler.{Init, WithinActorContext}
+import org.json4s.JsonAST.JObject
+import akka.io.IO
 
 class RouterManager extends Actor {
   override def preStart() {
@@ -17,6 +19,12 @@ class RouterManager extends Actor {
 }
 
 class RouterTCPTransport extends Actor with ActorLogging with ActorSettings {
+  // Kill connections on error
+  override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy() {
+    case _: Exception => SupervisorStrategy.Stop
+    case _: Error => SupervisorStrategy.Escalate
+  }
+
   override def preStart() {
     import context._
 
@@ -28,7 +36,9 @@ class RouterTCPTransport extends Actor with ActorLogging with ActorSettings {
     case _: Tcp.Bound =>
     case Tcp.Connected(remote, local) =>
       val init = TcpPipelineHandler.withLogger(log,
-        new StringByteStringAdapter("latin1") >>
+        //new RouterProtocolAdapter >>
+        new JSONAdapter >>
+          new StringByteStringAdapter("latin1") >>
         new DelimiterFraming(maxSize = 1024, delimiter = ByteString('\n'), includeDelimiter = false) >>
         new TcpReadWriteAdapter >>
         new BackpressureBuffer(lowBytes = 100, highBytes = 1000, maxBytes = 10000)
@@ -40,11 +50,8 @@ class RouterTCPTransport extends Actor with ActorLogging with ActorSettings {
   }
 }
 
-class RouterTCPClientHandler(pipeline: Init[WithinActorContext, String, String]) extends Actor {
-  override def receive: Actor.Receive = PartialFunction.empty
-}
-
-object RouterProtocol {
-  case class RecipientFilter(blids: Seq[Int])
-  case class IncomingMessage(recipients: RecipientFilter, kind: String, payload: AnyRef)
+class RouterTCPClientHandler(pipeline: Init[WithinActorContext, JObject, JObject]) extends Actor {
+  override def receive: Actor.Receive = {
+    case pipeline.Event(input) =>
+  }
 }

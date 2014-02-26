@@ -7,7 +7,7 @@ class Kernel extends Bootable {
   val system = ActorSystem("bam-router")
 
   override def startup(): Unit = {
-    system.actorOf(Props[RouterManager], "router") ! "hi"
+    system.actorOf(Props[RouterManager], "router")
   }
 
   override def shutdown(): Unit = {
